@@ -1,1 +1,8 @@
 *.so
+
+# Env and secrets (never commit API keys)
+.env
+thesis_mvp/.env
+*.env
+!*.env.example
+thesis_mvp/outputs/

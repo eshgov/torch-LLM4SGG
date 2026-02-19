@@ -1,0 +1,36 @@
+# Vague captions to elicit variability in triplet extraction (thesis MVP).
+# One caption per line. Lines starting with # are ignored.
+
+# Deliberately vague: underspecified relations and referents
+Someone in a chair with a phone and someone else on the couch.
+A room with a sofa and a table and a lamp somewhere in the corner.
+Two people on a bench near the sidewalk; one of them has a phone.
+A kitchen with a sink and a fridge and some cabinets.
+A woman with a book on a bed with a blanket and pillows.
+A desk with a laptop and a cup and a plant by the window.
+Some clocks on the floor near someone's feet.
+A bathroom with a mirror and a sink and a towel on something.
+A table with plates and forks and flowers in the middle.
+A child with toys on the carpet in a bedroom.
+A man by a bookshelf with a book.
+A bedroom with a bed and some tables and a window with something on it.
+Bread with stuff on it like cream and guacamole.
+A woman and a dog on a beach.
+A woman and a child near a bench with kites and ducks in the sky and on the ground.
+# Spatially vague (near / by / beside / next to / around)
+A chair by a table with a lamp near the window.
+Two cats on the couch and one by the table.
+A plant on a shelf by some books and another near the door.
+Keys on the table by the phone and a bag under the chair.
+# Containment / location vague (in / under / inside)
+A dog under the table in the corner.
+Books in a box under the bed.
+A child under a blanket on the couch in the room.
+A laptop in a bag on the floor by the desk.
+# Referentially vague (one, the other, someone, something)
+One person reading and the other with a cup; both on the sofa.
+Two lamps in the room, one on the table and one on the shelf by the window.
+One man in a blue shirt next to another by the door.
+A bowl on the table and a bowl on the counter in the kitchen.
+Chairs around a table with one person in the one by the window.
+A book on the table and a book on the shelf; someone is reading one of them.
