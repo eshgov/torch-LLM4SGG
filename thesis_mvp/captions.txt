@@ -1,36 +1,63 @@
-# Vague captions to elicit variability in triplet extraction (thesis MVP).
+# Vague captions to elicit variability and predicate disagreement (thesis MVP).
+# Design: underspecified spatial relations, stacked prepositions, weak attachment
+# for "with", and phrasing where near / by / next to / beside are all plausible.
 # One caption per line. Lines starting with # are ignored.
 
-# Deliberately vague: underspecified relations and referents
-Someone in a chair with a phone and someone else on the couch.
-A room with a sofa and a table and a lamp somewhere in the corner.
-Two people on a bench near the sidewalk; one of them has a phone.
-A kitchen with a sink and a fridge and some cabinets.
-A woman with a book on a bed with a blanket and pillows.
-A desk with a laptop and a cup and a plant by the window.
-Some clocks on the floor near someone's feet.
-A bathroom with a mirror and a sink and a towel on something.
-A table with plates and forks and flowers in the middle.
-A child with toys on the carpet in a bedroom.
-A man by a bookshelf with a book.
-A bedroom with a bed and some tables and a window with something on it.
-Bread with stuff on it like cream and guacamole.
-A woman and a dog on a beach.
-A woman and a child near a bench with kites and ducks in the sky and on the ground.
-# Spatially vague (near / by / beside / next to / around)
-A chair by a table with a lamp near the window.
-Two cats on the couch and one by the table.
-A plant on a shelf by some books and another near the door.
-Keys on the table by the phone and a bag under the chair.
-# Containment / location vague (in / under / inside)
-A dog under the table in the corner.
-Books in a box under the bed.
-A child under a blanket on the couch in the room.
-A laptop in a bag on the floor by the desk.
-# Referentially vague (one, the other, someone, something)
-One person reading and the other with a cup; both on the sofa.
-Two lamps in the room, one on the table and one on the shelf by the window.
-One man in a blue shirt next to another by the door.
-A bowl on the table and a bowl on the counter in the kitchen.
-Chairs around a table with one person in the one by the window.
-A book on the table and a book on the shelf; someone is reading one of them.
+# Heavy "with" + unclear who is where (attachment ambiguity)
+Someone in a chair with a phone and someone else on or by the couch.
+A room with a sofa with a table with a lamp and something in the corner.
+A woman with a book with a bed with blankets and things on them.
+A desk with a laptop with a cup with a plant and the window behind it all.
+A child with toys on a carpet in a bedroom with clutter around.
+A man with a bookshelf with a book and something leaning on something.
+
+# Near / by / beside / next to compressed (model may pick different predicates)
+Two people on a bench by the sidewalk with one of them and a phone nearby.
+A chair by a table by a lamp by something near the window.
+Two cats on the couch and one by the table near the wall.
+A plant on a shelf by books by another plant near the door.
+Keys on the table by the phone with a bag by the chair under something.
+One man in a shirt next to another by the door near the wall.
+A person and a bike by the building near the corner by the street.
+The vase and the flowers by the table near the wall beside the window.
+
+# Containment stacks (in / on / under / by often interchangeable in wording)
+A dog under or near something on the floor in the corner by the furniture.
+Books in something under the bed near the floor.
+A child under covers on furniture in a room with pillows.
+A laptop in a bag on the ground by the desk near the chair.
+A bowl on a surface and another bowl somewhere in the kitchen area.
+
+# Referentially vague (it / one / other / something / somewhere)
+Someone reading and the other with a cup; both around the sofa area.
+Two lamps in the room, one by the table and one by the shelf by the window.
+Chairs around a table with a person in one of them by the window.
+A book on a surface and a book on another; someone reading one of them.
+Something on the table next to something by the wall.
+One thing on the floor and another thing near it with a third thing around.
+
+# Underspecified scenes (few anchors, many equally OK relations)
+A kitchen with a sink and a fridge and cabinets and stuff on surfaces.
+A bathroom with a mirror and a sink and a towel somewhere wet.
+Some clocks on the ground near feet with shoes around.
+Bread with toppings on it with spreads and things like that.
+A woman and a dog at the beach with sand and water around.
+A woman and a child near a bench with kites and ducks up high and down low.
+A table with plates and forks and flowers somewhere in the middle area.
+
+# Spatially loose ("around", "somewhere", "area", no crisp graph)
+People around a table with drinks and phones somewhere nearby.
+A bag somewhere near the door by the coat thing next to shoes.
+The cat is around the seating by the table near the light.
+A cup somewhere on or near the desk by the wall in the office.
+Stuff on the counter by the sink with dishes around.
+
+# Tight near/by/next to/beside competition (same scene, different wording slots)
+The box by the table next to the window near the wall.
+A bike beside the car by the curb next to the tree.
+The phone on the desk by the laptop near the lamp.
+A cat next to the dog by the door beside the mat.
+The boy near the girl by the fence next to the gate.
+A plate on the counter by the stove next to the sink.
+The hat on the hook by the coat next to the umbrella.
+A book on the nightstand by the bed near the lamp.

@@ -32,6 +32,11 @@ from thesis_mvp.belief_graph import (
 )
 from thesis_mvp.canonicalize import canonicalize_triplets, load_synonyms_file
 from thesis_mvp.triplet_parser import parse_triplets_from_response
+from thesis_mvp.search_planner import (
+    plan_locations,
+    simulate_search,
+)
+from thesis_mvp.caption_hist_plot import save_caption_edge_histogram
 
 # --- Few-shot prompt (LLM4SGG-style, single caption) ---
 SINGLE_CAPTION_PROMPT_PREFIX = """\
@@ -108,6 +113,11 @@ def load_captions(captions_file: str | None, hardcoded: list[str], max_captions:
 def main():
     parser = argparse.ArgumentParser(description="Thesis MVP: repeated triplet extraction and belief graph")
     parser.add_argument("--captions_file", type=str, default=None, help="Text file with one caption per line")
+    parser.add_argument(
+        "--no_hardcoded",
+        action="store_true",
+        help="Do not prepend the 3 default example captions; use only --captions_file (required unless max_captions tests)",
+    )
     parser.add_argument("--runs", type=int, default=10, help="Number of extraction runs per caption (K)")
     parser.add_argument("--temperature", type=float, default=0.7, help="LLM temperature (ignored if --compare_temps set)")
     parser.add_argument("--compare_temps", type=str, default=None, help="Comma-separated temps, e.g. 0.0,0.7; run each caption at each temp")
@@ -118,6 +128,30 @@ def main():
     parser.add_argument("--seed", type=int, default=None, help="Random seed (stored in metadata for reproducibility)")
     parser.add_argument("--canonicalize", type=str, default="true", choices=["true", "false"], help="Apply entity/predicate canonicalization (default true)")
     parser.add_argument("--synonyms_file", type=str, default=None, help="Optional CSV 'from,to' for extra synonym mappings")
+    parser.add_argument(
+        "--plan_target",
+        type=str,
+        default=None,
+        help="If set, run object-search planning: marginal P(location) for this subject (canonicalized)",
+    )
+    parser.add_argument(
+        "--plan_spatial_only",
+        type=str,
+        default="true",
+        choices=["true", "false"],
+        help="Only sum edges whose predicate looks spatial (default true)",
+    )
+    parser.add_argument(
+        "--plan_truth",
+        type=str,
+        default=None,
+        help="Ground-truth location for simulated search (canonicalized); use with --plan_target",
+    )
+    parser.add_argument(
+        "--plan_simulate",
+        action="store_true",
+        help="If set with --plan_target and --plan_truth, simulate greedy vs uncertainty_aware search order",
+    )
     args = parser.parse_args()
 
     api_key = get_api_key()
@@ -134,7 +168,7 @@ def main():
     do_canonicalize = args.canonicalize.lower() == "true"
     synonyms = load_synonyms_file(args.synonyms_file) if args.synonyms_file else {}
 
-    hardcoded = [
+    hardcoded = [] if args.no_hardcoded else [
         "A person sits in a chair looking at her phone while another rests on the couch.",
         "A living room with a sofa, a coffee table, and a lamp in the corner.",
         "Two men sit on a bench near the sidewalk and one of them talks on a cell phone.",
@@ -143,6 +177,9 @@ def main():
     if not captions:
         print("No captions to process. Add --captions_file or use hardcoded list.", file=sys.stderr)
         sys.exit(1)
+
+    if args.plan_simulate and not args.plan_truth:
+        print("Warning: --plan_simulate ignored without --plan_truth (ground-truth location).", file=sys.stderr)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_root = Path(args.out_dir or f"thesis_mvp/outputs/{timestamp}")
@@ -156,6 +193,8 @@ def main():
         plt = None
 
     summary_rows = []
+    planning_rows: list[dict] = []
+    plan_spatial = args.plan_spatial_only.lower() == "true"
     # Per-temp aggregates for final console summary: temp -> {global_entropies[], n_unique_edges[], total_disagreements}
     per_temp = {t: {"global_entropies": [], "n_unique_edges": [], "disagreements": 0} for t in temps}
 
@@ -232,21 +271,57 @@ def main():
             else:
                 print("\n  No predicate disagreement in this caption.")
 
-            # Plot
-            if plt is not None and len(df) > 0:
-                fig, ax = plt.subplots(figsize=(6, 4))
-                if args.plot_type == "entropy":
-                    ax.hist(df["entropy"], bins=min(20, max(1, len(df))), edgecolor="black", alpha=0.7)
-                    ax.set_xlabel("Edge entropy H(e)")
+            if args.plan_target:
+                raw_m, P_tilde, g_loc, u_loc = plan_locations(
+                    edge_probs,
+                    args.plan_target,
+                    synonyms=synonyms,
+                    spatial_only=plan_spatial,
+                )
+                print(f"\n  --- Planning (target={args.plan_target!r}) ---")
+                if not P_tilde:
+                    print("  No location mass for this target in the belief graph (check spelling / canonical form).")
                 else:
-                    ax.hist(df["probability"], bins=min(20, max(1, len(df))), edgecolor="black", alpha=0.7)
-                    ax.set_xlabel("Edge probability P(e)")
-                ax.set_ylabel("Count")
-                ax.set_title(f"Caption {cap_idx + 1} (T={temp}): {caption[:45]}...")
-                plt.tight_layout()
+                    print("  P̃(location) | greedy baseline (argmax P̃) →", g_loc, "| uncertainty-aware →", u_loc)
+                    for loc in sorted(P_tilde.keys(), key=lambda x: -P_tilde[x]):
+                        r = raw_m.get(loc, 0.0)
+                        print(f"    {loc!r}: P̃={P_tilde[loc]:.4f} (raw mass={r:.4f})")
+                planning_rows.append({
+                    "caption_id": cap_idx + 1,
+                    "temperature": temp,
+                    "plan_target": args.plan_target,
+                    "greedy_location": g_loc or "",
+                    "uncertainty_aware_location": u_loc or "",
+                    "n_location_candidates": len(P_tilde),
+                })
+                if args.plan_simulate and args.plan_truth:
+                    for pol in ("greedy", "uncertainty_aware"):
+                        sim = simulate_search(
+                            edge_probs,
+                            args.plan_target,
+                            args.plan_truth,
+                            policy=pol,  # type: ignore[arg-type]
+                            synonyms=synonyms,
+                            spatial_only=plan_spatial,
+                        )
+                        print(
+                            f"  Simulate [{pol}]: steps={sim.steps}, success={sim.success}, order={sim.visited}"
+                        )
+                        planning_rows[-1][f"sim_{pol}_steps"] = sim.steps
+                        planning_rows[-1][f"sim_{pol}_success"] = sim.success
+                        planning_rows[-1][f"sim_{pol}_order"] = ";".join(sim.visited)
+
+            # Plot (full scene caption in title, word-wrapped; figure height scales with text)
+            if plt is not None and len(df) > 0:
                 plot_path = temp_dir / f"{safe_label}_hist_{args.plot_type}.png"
-                plt.savefig(plot_path, dpi=100)
-                plt.close()
+                save_caption_edge_histogram(
+                    df,
+                    cap_idx + 1,
+                    float(temp),
+                    caption,
+                    plot_path,
+                    "entropy" if args.plot_type == "entropy" else "prob",
+                )
                 print(f"  Wrote {plot_path}")
 
     # Summary CSV
@@ -254,6 +329,12 @@ def main():
     summary_path = out_root / "summary.csv"
     summary_df.to_csv(summary_path, index=False)
     print(f"\nWrote {summary_path}")
+
+    if planning_rows:
+        plan_df = pd.DataFrame(planning_rows)
+        plan_path = out_root / "planning_summary.csv"
+        plan_df.to_csv(plan_path, index=False)
+        print(f"Wrote {plan_path}")
 
     # metadata.json
     metadata = {
@@ -266,6 +347,9 @@ def main():
         "git_commit": get_git_commit(),
         "seed": args.seed,
         "n_captions": len(captions),
+        "plan_target": args.plan_target,
+        "plan_spatial_only": plan_spatial,
+        "plan_simulate": bool(args.plan_simulate and args.plan_truth),
     }
     meta_path = out_root / "metadata.json"
     with open(meta_path, "w") as f:
