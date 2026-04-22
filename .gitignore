@@ -9,3 +9,5 @@ thesis_mvp/outputs/
 
 # Princeton thesis LaTeX/PDF/figures (local only; pipeline code is under thesis_mvp/)
 thesis/
+
+.DS_Store
